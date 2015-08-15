@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	//"path/filepath"
 )
@@ -27,7 +26,6 @@ func CreateServFileList(dirname string) []ServFile {
 		filename := file.Name()
 		fileBytes, err := GetFileBytes(filename)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		fileList = append(fileList, ServFile{filename, GetHash(fileBytes)})
@@ -49,4 +47,25 @@ func GetHash(filebytes []byte) string {
 	h := sha1.New()
 	h.Write(filebytes)
 	return hex.EncodeToString(h.Sum([]byte{}))
+}
+
+// Diff compares two ServFile slices and returns the info of files to add and to delete
+func Diff(local, remote []ServFile) (toAdd, toDel []ServFile) {
+	m := make(map[ServFile]int)
+	for _, localFile := range local {
+		m[localFile]++
+	}
+	for _, remoteFile := range remote {
+		m[remoteFile] += 2
+	}
+	for mKey, mVal := range m {
+		if mVal == 1 {
+			// this file is only on local
+			toDel = append(toDel, mKey)
+		} else if mVal == 2 {
+			// this file is only on remote
+			toAdd = append(toAdd, mKey)
+		}
+	}
+	return
 }

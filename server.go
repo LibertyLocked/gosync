@@ -8,24 +8,31 @@ import (
 
 var fileList []ServFile
 
-// Server struct
+// Server RPC struct
 type Server struct{}
 
 // RequestServFileList Gets the list of file infos of the files being served
 func (serv *Server) RequestServFileList(input string, reply *[]ServFile) error {
-	*reply = make([]ServFile, len(fileList), len(fileList))
+	*reply = make([]ServFile, len(fileList))
 	copy(*reply, fileList)
 	return nil
 }
 
 // RequestFile Gets the file from server
-func (serv *Server) RequestFile(input string, reply *[]byte) error {
+func (serv *Server) RequestFile(input ServFile, reply *[]byte) error {
+	filebytes, err := GetFileBytes(input.Name)
+	if err != nil {
+		fmt.Println("Error sending file", input.Name)
+		return err
+	}
+	*reply = make([]byte, len(filebytes))
+	copy(*reply, filebytes)
 	return nil
 }
 
 func server(port string) {
 	fmt.Println("Gosync server starting at port", port)
-	// create a list of ServFiles
+	// create a list of ServFiles on server
 	fileList = CreateServFileList(".")
 	// Print the serv file list
 	fmt.Println("Files being served:")
@@ -44,8 +51,7 @@ func server(port string) {
 		if err != nil {
 			continue
 		}
-		remoteAddr := c.RemoteAddr()
-		fmt.Println("Accepted connection from", remoteAddr)
+		fmt.Println("Accepted connection from", c.RemoteAddr())
 		go rpc.ServeConn(c)
 	}
 }

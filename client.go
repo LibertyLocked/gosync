@@ -36,12 +36,14 @@ func client(serverAddr string) {
 		}
 		// refresh local file list
 		localFileList = CreateServFileList(".")
-		// diff again to find the files we need to remove
-		_, toDel := Diff(localFileList, remoteFileList)
-		for _, val := range toDel {
-			// delete the files that aren't needed
-			fmt.Println("-", val.Name, ":", val.Sha1)
-			os.Remove(val.Name)
+		// diff again to find the files we need to remove (if FlagRm is true)
+		if FlagRm {
+			_, toDel := Diff(localFileList, remoteFileList)
+			for _, val := range toDel {
+				// delete the files that aren't needed
+				fmt.Println("-", val.Name, ":", val.Sha1)
+				os.Remove(val.Name)
+			}
 		}
 	}
 	c.Close()

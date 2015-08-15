@@ -3,31 +3,69 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // GoSyncExeName the name of the gosync executable
 var GoSyncExeName string
 
-func main() {
-	GoSyncExeName = os.Args[0]
+// FlagRm flag indicates wheter we should delete files that aren't sync'd
+var FlagRm bool
 
-	if len(os.Args) > 2 && os.Args[1] == "-s" {
-		// run it in server mode
-		port := os.Args[2]
-		server(port)
-	} else if len(os.Args) > 2 && os.Args[1] == "-c" {
-		// server address is in args
-		serverAddr := os.Args[2]
-		client(serverAddr)
-	} else if len(os.Args) == 1 {
-		// no args. run in client mode and ask for user input
-		var serverAddr string
-		fmt.Println("Please enter server address (e.g. localhost:9999): ")
-		fmt.Scanln(&serverAddr)
-		client(serverAddr)
-	} else {
-		fmt.Println("Invalid arguments!")
-		fmt.Println("For servers:", GoSyncExeName, "-s <port>")
-		fmt.Println("For clients:", GoSyncExeName, "-c <addr:port>")
+func main() {
+	GoSyncExeName = filepath.Base(os.Args[0])
+
+	// flags
+	serverMode := false
+	FlagRm = false
+	addr := ""
+
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-") {
+			// args that start with '-'
+			switch arg {
+			case "-c":
+				serverMode = false
+			case "-s":
+				serverMode = true
+			case "-rm":
+				FlagRm = true
+			case "-help":
+				printHelp()
+				return
+			default:
+				fmt.Println("Unknown option:", arg)
+				return
+			}
+		} else {
+			// args don't start with '-'
+			addr = arg
+		}
 	}
+
+	if addr == "" {
+		if serverMode {
+			fmt.Println("Please enter port number (e.g. 9999): ")
+		} else {
+			fmt.Println("Please enter server address (e.g. localhost:9999): ")
+		}
+		fmt.Scanln(&addr)
+	}
+
+	if serverMode {
+		server(addr)
+	} else {
+		client(addr)
+	}
+}
+
+func printHelp() {
+	fmt.Println("Usage:", GoSyncExeName, "[-Options] [port/addr:port]")
+	fmt.Println("\nFor servers:", GoSyncExeName, "-s [port]")
+	fmt.Println("\tExample:", GoSyncExeName, "-s 9999")
+	fmt.Println("For clients:", GoSyncExeName, "-c [addr:port]")
+	fmt.Println("\tExample:", GoSyncExeName, "-c localhost:9999")
+	fmt.Println("Other flags:")
+	fmt.Println("-rm\tRemove out-of-sync local files")
 }

@@ -27,24 +27,28 @@ func client(serverAddr string) {
 		// successfully obtained the list of file infos
 		// diff once to find the files we need to download
 		toAdd, _ := Diff(localFileList, remoteFileList)
+		fmt.Println("Downloading", len(toAdd), "file(s)")
 		for _, val := range toAdd {
 			// download the files needed
-			fmt.Println("+", val.Name, ":", val.Sha1)
 			var buffer []byte
 			c.Call("Server.RequestFile", val, &buffer)
 			ioutil.WriteFile(val.Name, buffer, os.FileMode(0644))
+			fmt.Println("+", val.Name, ":", val.Sha1)
 		}
-		// refresh local file list
-		localFileList = CreateServFileList(".")
-		// diff again to find the files we need to remove (if FlagRm is true)
+
 		if FlagRm {
+			// refresh local file list
+			localFileList = CreateServFileList(".")
+			// diff again to find the files we need to remove (if FlagRm is true)
 			_, toDel := Diff(localFileList, remoteFileList)
+			fmt.Println("Removing", len(toDel), "file(s)")
 			for _, val := range toDel {
 				// delete the files that aren't needed
-				fmt.Println("-", val.Name, ":", val.Sha1)
 				os.Remove(val.Name)
+				fmt.Println("-", val.Name, ":", val.Sha1)
 			}
 		}
 	}
+	fmt.Println("Sync completed! Closing connection")
 	c.Close()
 }

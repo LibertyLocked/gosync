@@ -46,6 +46,7 @@ func server(port string) {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("Awaiting connection")
 	for {
 		c, err := listener.Accept()
 		if err != nil {

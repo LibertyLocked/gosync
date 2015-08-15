@@ -5,7 +5,12 @@ import (
 	"os"
 )
 
+// GoSyncExeName the name of the gosync executable
+var GoSyncExeName string
+
 func main() {
+	GoSyncExeName = os.Args[0]
+
 	if len(os.Args) > 2 && os.Args[1] == "-s" {
 		// run it in server mode
 		port := os.Args[2]
@@ -22,7 +27,7 @@ func main() {
 		client(serverAddr)
 	} else {
 		fmt.Println("Invalid arguments!")
-		fmt.Println("For servers: gosync -s <port>")
-		fmt.Println("For clients: gosync -c <addr:port>")
+		fmt.Println("For servers:", GoSyncExeName, "-s <port>")
+		fmt.Println("For clients:", GoSyncExeName, "-c <addr:port>")
 	}
 }

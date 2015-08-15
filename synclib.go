@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io/ioutil"
+	"strings"
 	//"path/filepath"
 )
 
@@ -20,7 +21,12 @@ func CreateServFileList(dirname string) []ServFile {
 	// files, _ := filepath.Glob("*")
 	files, _ := ioutil.ReadDir(dirname)
 	for _, file := range files {
+		// Exclude directories
 		if file.IsDir() {
+			continue
+		}
+		// Exclude gosync itself
+		if strings.HasPrefix(strings.ToLower(file.Name()), strings.ToLower(GoSyncExeName)) {
 			continue
 		}
 		filename := file.Name()

@@ -1,8 +1,15 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
+	"io"
 	"io/ioutil"
 	"strings"
 	//"path/filepath"
@@ -34,7 +41,7 @@ func CreateServFileList(dirname string) []ServFile {
 		if err != nil {
 			continue
 		}
-		fileList = append(fileList, ServFile{filename, GetHash(fileBytes)})
+		fileList = append(fileList, ServFile{filename, GetFileHash(fileBytes)})
 	}
 	return fileList
 }
@@ -48,11 +55,18 @@ func GetFileBytes(filename string) ([]byte, error) {
 	return filebytes, err
 }
 
-// GetHash gets the sha1 hash of a file
-func GetHash(filebytes []byte) string {
+// GetFileHash gets the sha1 hash of a file
+func GetFileHash(filebytes []byte) string {
 	h := sha1.New()
 	h.Write(filebytes)
 	return hex.EncodeToString(h.Sum([]byte{}))
+}
+
+// GetKeyHash gets the sha256 hash of a string
+func GetKeyHash(str string) []byte {
+	h := sha256.New()
+	h.Write([]byte(str))
+	return h.Sum([]byte{})
 }
 
 // Diff compares two ServFile slices and returns the info of files to add and to delete
@@ -74,4 +88,41 @@ func Diff(local, remote []ServFile) (toAdd, toDel []ServFile) {
 		}
 	}
 	return
+}
+
+// AESEncrypt encrypts plaintext to ciphertext using AES
+func AESEncrypt(plaintext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	b := base64.StdEncoding.EncodeToString(plaintext)
+	ciphertext := make([]byte, aes.BlockSize+len(b))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+	cfb := cipher.NewCFBEncrypter(block, iv)
+	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
+	return ciphertext, nil
+}
+
+// AESDecrypt decrypts ciphertext to plaintext using AES
+func AESDecrypt(ciphertext, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	if len(ciphertext) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short")
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+	cfb := cipher.NewCFBDecrypter(block, iv)
+	cfb.XORKeyStream(ciphertext, ciphertext)
+	data, err := base64.StdEncoding.DecodeString(string(ciphertext))
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

@@ -28,12 +28,25 @@ func client(serverAddr string) {
 		// diff once to find the files we need to download
 		toAdd, _ := Diff(localFileList, remoteFileList)
 		fmt.Println("Downloading", len(toAdd), "file(s)")
-		for _, val := range toAdd {
+		for _, file := range toAdd {
 			// download the files needed
 			var buffer []byte
-			c.Call("Server.RequestFile", val, &buffer)
-			ioutil.WriteFile(val.Name, buffer, os.FileMode(0644))
-			fmt.Println("+", val.Name, ":", val.Sha1)
+			c.Call("Server.RequestFile", file, &buffer)
+			if UseEncryption {
+				buffer, err = AESDecrypt(buffer, AESKey)
+				if err != nil {
+					fmt.Println("Error decrypting file:", file.Name)
+					continue
+				}
+			}
+			ioutil.WriteFile(file.Name, buffer, os.FileMode(0644))
+			// tell user the file has been downloaded
+			fmt.Println("+", file.Name, ":", file.Sha1)
+			// check sha1 of the written file to ensure integrity
+			writtenBytes, _ := GetFileBytes(file.Name)
+			if GetFileHash(writtenBytes) != file.Sha1 {
+				fmt.Println("Hash mismatch! Downloaded file is corrupted!")
+			}
 		}
 
 		if FlagRm {
@@ -45,6 +58,7 @@ func client(serverAddr string) {
 			for _, val := range toDel {
 				// delete the files that aren't needed
 				os.Remove(val.Name)
+				// tell user the file has been deleted
 				fmt.Println("-", val.Name, ":", val.Sha1)
 			}
 		}

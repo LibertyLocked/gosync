@@ -13,6 +13,7 @@ type Server struct{}
 
 // RequestServFileList Gets the list of file infos of the files being served
 func (serv *Server) RequestServFileList(input string, reply *[]ServFile) error {
+	fmt.Println("Client requested filelist")
 	*reply = make([]ServFile, len(fileList))
 	copy(*reply, fileList)
 	return nil
@@ -20,10 +21,19 @@ func (serv *Server) RequestServFileList(input string, reply *[]ServFile) error {
 
 // RequestFile Gets the file from server
 func (serv *Server) RequestFile(input ServFile, reply *[]byte) error {
+	fmt.Println("Client requested file:", input.Name)
 	filebytes, err := GetFileBytes(input.Name)
 	if err != nil {
-		fmt.Println("Error sending file", input.Name)
+		fmt.Println("Error sending file:", input.Name)
 		return err
+	}
+	if UseEncryption {
+		filebytes, err = AESEncrypt(filebytes, AESKey)
+		if err != nil {
+			fmt.Println("Error encrypting file:", input.Name)
+			fmt.Println(err.Error())
+			return err
+		}
 	}
 	*reply = make([]byte, len(filebytes))
 	copy(*reply, filebytes)

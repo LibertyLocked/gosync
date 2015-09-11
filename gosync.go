@@ -10,8 +10,14 @@ import (
 // GoSyncExeName the name of the gosync executable
 var GoSyncExeName string
 
-// FlagRm flag indicates wheter we should delete files that aren't sync'd
+// FlagRm flag indicates whether we should delete files that aren't sync'd
 var FlagRm bool
+
+// UseEncryption flag indicates whether we use AES to encrypt/decrypt files
+var UseEncryption bool
+
+// AESKey the key to encrypt/decrypt files
+var AESKey []byte
 
 func main() {
 	GoSyncExeName = filepath.Base(os.Args[0])
@@ -22,9 +28,14 @@ func main() {
 	addr := ""
 
 	for _, arg := range os.Args[1:] {
-		if strings.HasPrefix(arg, "-") {
+		argLower := strings.ToLower(arg)
+		if strings.HasPrefix(argLower, "-key:") {
+			// args that start with "-key:"
+			UseEncryption = true
+			AESKey = GetKeyHash(arg)
+		} else if strings.HasPrefix(argLower, "-") {
 			// args that start with '-'
-			switch arg {
+			switch argLower {
 			case "-c":
 				serverMode = false
 			case "-s":
@@ -53,6 +64,10 @@ func main() {
 		fmt.Scanln(&addr)
 	}
 
+	if UseEncryption {
+		fmt.Println("AES encryption is enabled")
+	}
+
 	if serverMode {
 		server(addr)
 	} else {
@@ -68,4 +83,5 @@ func printHelp() {
 	fmt.Println("\tExample:", GoSyncExeName, "-c localhost:9999")
 	fmt.Println("Other flags:")
 	fmt.Println("-rm\tRemove out-of-sync local files")
+	fmt.Println("-key:[AESKey]\tAES key to encrypt/decrypt files")
 }

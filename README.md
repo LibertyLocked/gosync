@@ -27,11 +27,11 @@ gosync -c [address:port]
 Example: gosync -c localhost:9999
 
 #### With AES encryption:
-gosync -s [address:port] -key:[AESKey]
+gosync -c [address:port] -key:[AESKey]
 
 Example: gosync -c localhost:9999 -key:myAwesomeKey
 
 #### Removing out-of-sync local files:
-gosync -s [address:port] -rm
+gosync -c [address:port] -rm
 
 Example: gosync -c localhost:9999 -rm

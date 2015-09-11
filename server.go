@@ -11,7 +11,19 @@ var fileList []ServFile
 // Server RPC struct
 type Server struct{}
 
-// RequestServFileList Gets the list of file infos of the files being served
+// RequestCompressionMode gets the mode of compression server is using
+func (serv *Server) RequestCompressionMode(input string, reply *bool) error {
+	*reply = UseCompression
+	return nil
+}
+
+// RequestEncryptionMode gets the mode of encryption server is using
+func (serv *Server) RequestEncryptionMode(input string, reply *bool) error {
+	*reply = UseEncryption
+	return nil
+}
+
+// RequestServFileList gets the list of file infos of the files being served
 func (serv *Server) RequestServFileList(input string, reply *[]ServFile) error {
 	fmt.Println("Client requested filelist")
 	*reply = make([]ServFile, len(fileList))
@@ -19,7 +31,7 @@ func (serv *Server) RequestServFileList(input string, reply *[]ServFile) error {
 	return nil
 }
 
-// RequestFile Gets the file from server
+// RequestFile gets the file from server
 func (serv *Server) RequestFile(input ServFile, reply *[]byte) error {
 	fmt.Println("Client requested file:", input.Name)
 	filebytes, err := GetFileBytes(input.Name)
@@ -27,8 +39,13 @@ func (serv *Server) RequestFile(input ServFile, reply *[]byte) error {
 		fmt.Println("Error sending file:", input.Name)
 		return err
 	}
+	// Compress if we use compression
+	if UseCompression {
+		filebytes = Compress(filebytes)
+	}
+	// Encrypt if we use encryption
 	if UseEncryption {
-		filebytes, err = AESEncrypt(filebytes, AESKey)
+		filebytes, err = Encrypt(filebytes, AESKey)
 		if err != nil {
 			fmt.Println("Error encrypting file:", input.Name)
 			fmt.Println(err.Error())

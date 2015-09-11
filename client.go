@@ -19,6 +19,17 @@ func client(serverAddr string) {
 		return
 	}
 	var remoteFileList []ServFile
+	// Ask server if encryption is used
+	var encryptionMode bool
+	err = c.Call("Server.RequestEncryptionMode", "", &encryptionMode)
+	if !encryptionMode {
+		UseEncryption = false
+	} else if encryptionMode && !UseEncryption {
+		fmt.Println("Sync aborted: Server requires encryption")
+		return
+	}
+	// Ask server if compression is used
+	err = c.Call("Server.RequestCompressionMode", "", &UseCompression)
 	// Get the file infos of the files being served
 	err = c.Call("Server.RequestServFileList", "", &remoteFileList)
 	if err != nil {
@@ -32,10 +43,19 @@ func client(serverAddr string) {
 			// download the files needed
 			var buffer []byte
 			c.Call("Server.RequestFile", file, &buffer)
+			// Decrypt if encryption is used
 			if UseEncryption {
-				buffer, err = AESDecrypt(buffer, AESKey)
+				buffer, err = Decrypt(buffer, AESKey)
 				if err != nil {
 					fmt.Println("Error decrypting file:", file.Name)
+					continue
+				}
+			}
+			// Decompress if compression is used
+			if UseCompression {
+				buffer, err = Decompress(buffer)
+				if err != nil {
+					fmt.Println("Error decompressing file:", file.Name)
 					continue
 				}
 			}

@@ -19,6 +19,9 @@ var UseEncryption bool
 // AESKey the key to encrypt/decrypt files
 var AESKey []byte
 
+// UseCompression flag indicates whether we use zlib encryption
+var UseCompression bool
+
 func main() {
 	GoSyncExeName = filepath.Base(os.Args[0])
 
@@ -45,6 +48,8 @@ func main() {
 			case "-help":
 				printHelp()
 				return
+			case "-compress":
+				UseCompression = true
 			default:
 				fmt.Println("Unknown option:", arg)
 				return
@@ -65,7 +70,10 @@ func main() {
 	}
 
 	if UseEncryption {
-		fmt.Println("AES encryption is enabled")
+		fmt.Println("Encryption is enabled")
+	}
+	if UseCompression {
+		fmt.Println("Compression is enabled")
 	}
 
 	if serverMode {

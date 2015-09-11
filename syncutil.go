@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/zlib"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -90,8 +92,8 @@ func Diff(local, remote []ServFile) (toAdd, toDel []ServFile) {
 	return
 }
 
-// AESEncrypt encrypts plaintext to ciphertext using AES
-func AESEncrypt(plaintext, key []byte) ([]byte, error) {
+// Encrypt encrypts plaintext to ciphertext using AES
+func Encrypt(plaintext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -107,8 +109,8 @@ func AESEncrypt(plaintext, key []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// AESDecrypt decrypts ciphertext to plaintext using AES
-func AESDecrypt(ciphertext, key []byte) ([]byte, error) {
+// Decrypt decrypts ciphertext to plaintext using AES
+func Decrypt(ciphertext, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -125,4 +127,24 @@ func AESDecrypt(ciphertext, key []byte) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+// Compress uses zlib to compress a byte array
+func Compress(data []byte) []byte {
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	w.Write(data)
+	w.Flush()
+	w.Close()
+	return b.Bytes()
+}
+
+// Decompress uses zlib to decompress a compressed byte array
+func Decompress(compressed []byte) ([]byte, error) {
+	var out bytes.Buffer
+	in := bytes.NewBuffer(compressed)
+	r, err := zlib.NewReader(in)
+	io.Copy(&out, r)
+	r.Close()
+	return out.Bytes(), err
 }

@@ -92,4 +92,5 @@ func printHelp() {
 	fmt.Println("Other flags:")
 	fmt.Println("-rm\tRemove out-of-sync local files")
 	fmt.Println("-key:[AESKey]\tAES key to encrypt/decrypt files")
+	fmt.Println("-compress\tUse zlib compression")
 }

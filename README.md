@@ -9,7 +9,7 @@ Gosync is a tool to quickly sync files inside a folder with those on a remote se
 
 
 ## How to use: server
-#### Without AES encryption: 
+#### Basic server: 
 gosync -s [port]
 
 Example: gosync -s 9999
@@ -21,7 +21,7 @@ Example: gosync -s 9999 -key:myAwesomeKey
 
 
 ## How to use: client
-#### Without AES encryption: 
+#### Basic client: 
 gosync -c [address:port]
 
 Example: gosync -c localhost:9999
